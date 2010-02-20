@@ -1,3 +1,5 @@
+  * added merge_schemas method to Schema class, hopefully some form of
+    this will eventually go into DBIx::Class
   * re-dumped with latest schema loader devel version
   * stripped _id suffixes for a number of relationships that still had
     them.  Hopefully the schema loader patch used for this will make

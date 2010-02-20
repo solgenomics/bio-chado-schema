@@ -12,7 +12,11 @@ my $build = Module::Build->new(
         resources =>
           { repository => 'http://github.com/rbuels/Bio-Chado-Schema', },
     },
-    build_requires => { 'Test::Exception' => '0.27', },
+    build_requires => {
+        'Test::Exception' => '0.27',
+        'Test::Warn'      => 0,
+        'Test::More'      => 0,
+    },
     requires       => {
         'perl' => '5.8.0',
 
@@ -20,11 +24,13 @@ my $build = Module::Build->new(
         'Bio::Root::Version' => '1.005002',
 
         # keep SPECIFIC bioperl dependencies here, for when bioperl
-        # is in smaller, versioned chunks
+        # is in smaller, versioned chunks.
         # 'Bio::PrimarySeq' => '1.5.2',
-        'Carp'        => '1.08',
-        'Carp::Clan'  => '6.00',
-        'DBIx::Class' => '0.08111',
+
+        'Carp'                 => '1.08',
+        'Carp::Clan'           => '6.00',
+        'DBIx::Class'          => '0.08111',
+        'Module::Load'         => 0,
     },
 );
 $build->create_build_script;

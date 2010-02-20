@@ -5,6 +5,8 @@ package Bio::Chado::Schema;
 
 use strict;
 use warnings;
+use Carp;
+use Module::Load ();
 
 use base 'DBIx::Class::Schema';
 
@@ -80,6 +82,81 @@ L<Bio::Chado::Schema::Pub>
 L<Bio::Chado::Schema::Sequence>
 
 L<Bio::Chado::Schema::Stock>
+
+=head1 ADDITIONAL METHODS
+
+=head2 merge_schemas
+
+  Usage   : my $s = Bio::Chado::Schema
+                      ->merge_with( 'Bio::Chado::Schema',
+                                      [ 'Foo', 'Bar', 'Baz' ],
+                                       search_path => ...
+                                     )
+  Returns : a L<DBIx::Class::Schema>-based object,
+            containing all the ResultSource objects from the
+            listed schema classes
+  Args : list of schema class names
+
+  Creates a new DBIC schema namespace and schema class, and
+     registers all resultsources in each of multiple DBIC Schema namespaces into a single schema.
+
+=cut
+
+my $merge_increment = 0;
+sub merge_schemas {
+    my ( $class, @schema_classes ) = @_;
+
+    @schema_classes >= 2
+        or croak 'must pass at least 2 schema classes';
+
+    #### make a new schema class on the fly
+
+    # make a unique package name for the merged schema
+    my $merged_package = $class.'::auto_merged::'.++$merge_increment;
+
+    # create the merged schema package, with the proper base class
+    {
+      require DBIx::Class::Schema;
+      no strict 'refs';
+      @{$merged_package.'::ISA'} = qw( DBIx::Class::Schema );
+    }
+
+    # load the sources for each of the given schemas into the new
+    # package, checking for collisions in monikers or table names
+    my %used_monikers;
+    my %used_table_names;
+    for my $schema_class (@schema_classes) {
+        Module::Load::load( $schema_class )
+              unless $schema_class->can('resultset');
+
+        for my $source_moniker ( $schema_class->sources ) {
+            my $source_obj = $schema_class->source( $source_moniker );
+
+            # croak for any collisions in source monikers
+            $used_monikers{$source_moniker}
+                and croak "both $schema_class and $used_monikers{$source_moniker} "
+                        . "have moniker $source_moniker, cannot merge";
+            $used_monikers{$source_moniker} = $schema_class;
+
+            # warn about any collisions in table names
+            if( $source_obj->isa('DBIx::Class::ResultSource::Table') ) {
+                my $table_name = $source_obj->from;
+
+                my $result_class = $source_obj->result_class;
+                $used_table_names{$table_name}
+                    and carp "WARNING: both $result_class and "
+                           . "$used_table_names{$table_name} use table/view "
+                           . "$table_name";
+                $used_table_names{$table_name} = $result_class;
+            }
+
+            # finally, register the resultsource with the target schema
+            $merged_package->register_source( $source_moniker, $source_obj );
+        }
+    }
+
+    return $merged_package;
+}
 
 
 =head1 CONTRIBUTORS
