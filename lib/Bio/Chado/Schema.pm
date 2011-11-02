@@ -127,12 +127,14 @@ sub get_cvterm {
     unless( $term_name ) {
         ($cv_name, $term_name) = split /:/, $cv_name, 2;
     }
+    $cv_name = undef if $cv_name eq '' || $cv_name eq '*';
 
-    return $self->{_bio_chado_schema_cvterm_cache}{$cv_name}{$term_name} ||=
-        $self->resultset('Cv::Cv')
-             ->search({ 'me.name' => $cv_name })
-             ->search_related('cvterms', { 'cvterms.name' => $term_name })
-             ->single;
+    return $self->{_bio_chado_schema_cvterm_cache}{ $cv_name || '*' }{$term_name} ||= do {
+        my $rs = $self->resultset('Cv::Cv');
+        $rs = $rs->search({ 'me.name' => $cv_name }) if defined $cv_name;
+        $rs->search_related('cvterms', { 'cvterms.name' => $term_name })
+           ->single;
+    };
 }
 
 =head2 get_cvterm_or_die
