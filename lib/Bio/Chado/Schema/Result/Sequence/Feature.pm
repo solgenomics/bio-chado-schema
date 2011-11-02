@@ -909,6 +909,7 @@ interested in helping with this, please contact GMOD!
 =cut
 
 use base qw/ Bio::PrimarySeq /;
+use List::MoreUtils ();
 
 =head2 id, primary_id, display_id
 
@@ -954,7 +955,7 @@ sub subseq {
     my $self = shift;
 
     # use the normal subseq if normal residues
-    if( $self->residues ) {
+    if( defined $self->residues ) {
         local $self->{seq} = $self->residues; #< stupid hack for Bio::PrimarySeq's subseq to work
         return $self->SUPER::subseq( @_ );
     }
@@ -981,6 +982,57 @@ sub subseq {
                 )
              ->get_column('mysubstring')
              ->single;
+}
+
+
+=head2 subseq_concat( [start,end], [start,end], ... )
+
+Concatenate multiple subsequences (in 1-based coordinates).  For
+features with large residues (like whole-chromosome seequences),
+contains a fast code path for fetching the concatenated sequences in a
+single query.
+
+=cut
+
+sub subseq_concat {
+    my ( $self, @ranges ) = @_;
+
+    my $schema  = $self->result_source->schema;
+    my $storage = $schema->storage;
+
+    my $supported_database =
+        List::MoreUtils::any { $storage->isa("DBIx::Class::Storage::DBI::$_") }
+        qw( Pg SQLite Oracle );
+    if( defined $self->residues || ! $supported_database ) {
+        # if we have our own residues, or don't know how to generate
+        # that SQL flavor, use a dumb concatenation of subseqs
+        return join '', map $self->subseq(@$_), @ranges;
+    }
+    elsif( $supported_database ) {
+
+        my $substring_concat_sql = join ' || ', map {
+            my ( $start, $end ) = @$_;
+            my $length = $end - $start + 1;
+            if( $length > 0 ) {
+                "SUBSTR( fp.value, $start, $length )"
+            } else {
+                ()
+            }
+        } @ranges;
+
+        return ( $storage->dbh->selectrow_array( <<"", undef, $self->feature_id ))[0];
+SELECT $substring_concat_sql
+FROM cvterm ct
+JOIN featureprop fp ON fp.type_id = ct.cvterm_id
+WHERE fp.feature_id = ?
+  AND ct.name = 'large_residues'
+
+
+    }
+    else {
+        die "this should not be reached!";
+    }
+
 }
 
 =head2 trunc

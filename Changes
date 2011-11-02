@@ -1,5 +1,10 @@
 {{$NEXT}}
 
+ * add subseq_concat() function to Feature rows that can take multiple
+   subsequences of the feature and concatenate them.  Provides a fast
+   single-query code path for doing things like stitching together
+   exons to make a cDNA sequence.
+
 0.09010   2011-10-24 11:25:25 America/Los_Angeles
 
  * added get_cvterm and get_cvterm_or_die convenience methods directly
