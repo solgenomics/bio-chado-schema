@@ -51,6 +51,11 @@ __PACKAGE__->table("stockprop");
   data_type: 'text'
   is_nullable: 1
 
+=head1 value_jsbon
+
+  data_type: 'jsonb'
+  is_nullable: 1
+
 =head2 rank
 
   data_type: 'integer'
@@ -73,6 +78,9 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "value",
   { data_type => "text", is_nullable => 1 },
+  "value_jsonb",
+  { data_type => "jsonb", is_nullable => 1 },
+    
   "rank",
   { data_type => "integer", default_value => 0, is_nullable => 0 },
 );
