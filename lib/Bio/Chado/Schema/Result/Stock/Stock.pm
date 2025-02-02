@@ -105,6 +105,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "is_obsolete",
   { data_type => "boolean", default_value => \"false", is_nullable => 0 },
+  "create_date",
+  { date_type => "varchar", is_nullable => 0}
 );
 __PACKAGE__->set_primary_key("stock_id");
 __PACKAGE__->add_unique_constraint("stock_c1", ["organism_id", "uniquename", "type_id"]);
