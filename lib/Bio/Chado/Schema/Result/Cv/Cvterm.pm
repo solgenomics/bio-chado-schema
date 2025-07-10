@@ -2255,6 +2255,7 @@ use Carp;
  Ret : a new Cvterm row
  Args: hashref of:
          { name   => 'cvterm name',
+           is_relationshiptype => 1,
            cv     => 'cv name' or L<Bio::Chado::Schema::Result::Cv::Cvterm> row,
            db     => 'db name' or L<Bio::Chado::Schema::Result::General::Db> row,
            dbxref => 'accession' or L<Bio::Chado::Schema::Result::General::Dbxref> row,
@@ -2270,7 +2271,9 @@ sub create_with {
     # cv and db default to 'null'
     $opts->{cv} = 'null' unless defined $opts->{cv};
     $opts->{db} = 'null' unless defined $opts->{db};
-
+    #is_relationshiptype defaults to 0, and set to 1 if defined.
+    #Should get a 1 value only for cvterms that belong to the relationship ontology or define relationship between terms
+    my $is_relationshiptype = defined $opts->{is_relationshiptype} ? 1 : 0;
     # dbxref defaults to autocreated:<cvterm_name>
     $opts->{dbxref} = 'autocreated:'.$opts->{name}
         unless defined $opts->{dbxref};
@@ -2304,6 +2307,7 @@ sub create_with {
     return $cv->create_related( 'cvterms',
                         { name => $opts->{name},
                           dbxref_id => $dbx->dbxref_id,
+                          is_relationshiptype => $is_relationshiptype,
                           }
       );
 }
