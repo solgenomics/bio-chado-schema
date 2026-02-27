@@ -36,7 +36,7 @@ __PACKAGE__->table("project");
 
   data_type: 'varchar'
   is_nullable: 0
-  size: 255
+  # note size limit was removed, as it is a text field in the db
 
 =head2 create_date
 
@@ -69,7 +69,7 @@ __PACKAGE__->add_columns(
   "name",
   { data_type => "varchar", is_nullable => 0, size => 255 },
   "description",
-  { data_type => "varchar", is_nullable => 0, size => 255 },
+  { data_type => "varchar", is_nullable => 0 },
   "create_date",
   {
     data_type     => "timestamp",
